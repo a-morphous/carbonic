@@ -1,14 +1,30 @@
-import * as esbuild from 'esbuild'
+import * as esbuild from "esbuild"
+import minimist from "minimist"
 
-const build = async() => {
-	const context = await esbuild.context({
-		entryPoints: ['src/index.ts'],
-		outdir: 'dist',
+const build = async () => {
+	const argv = minimist(process.argv.slice[2] ?? [])
+
+	/**
+	 * @type {esbuild.BuildOptions} 
+	 */
+	const esbuildOptions = {
+		
+		entryPoints: ["src/index.ts"],
+		outdir: "dist",
 		bundle: true,
-		platform: 'node',
-		format: 'esm'
-	})
-	await context.watch()
-	console.log("Build and watching...")
+		platform: "node",
+		minify: true,
+		format: "esm",
+	
+	}
+
+	if (argv.w) {
+		const context = await esbuild.context(esbuildOptions)
+		await context.watch()
+		console.log("Build and watching...")
+	} else {
+		await esbuild.build(esbuildOptions)
+		console.log("Built successfully")
+	}
 }
 build()
