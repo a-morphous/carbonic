@@ -1,26 +1,30 @@
 {
-  "name": "splitshift",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "type": "module",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "Amorphous",
-  "license": "ISC",
-  "bin": "./dist/index.js",
-  "files": [
-    "dist"
-  ],
-  "devDependencies": {
-    "@types/node": "^18.15.11",
-    "esbuild": "^0.17.16"
-  },
-  "dependencies": {
-    "glob": "^10.0.0",
-    "json5": "^2.2.3",
-    "minimist": "^1.2.8"
-  }
+	"name": "@a-morphous/carbonic",
+	"version": "0.1.0",
+	"description": "CLI tool to selectively sync a source repository with a destination",
+	"main": "dist/index.js",
+	"type": "module",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"build": "node build",
+		"watch": "node build -w"
+	},
+	"keywords": [],
+	"author": "Amorphous",
+	"license": "ISC",
+	"bin": {
+		"carbonic": "./dist/index.js"
+	},
+	"files": [
+		"dist"
+	],
+	"devDependencies": {
+		"@types/node": "^18.15.11",
+		"esbuild": "^0.17.16"
+	},
+	"dependencies": {
+		"glob": "^10.0.0",
+		"json5": "^2.2.3",
+		"minimist": "^1.2.8"
+	}
 }

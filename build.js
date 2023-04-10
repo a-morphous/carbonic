@@ -2,7 +2,7 @@ import * as esbuild from "esbuild"
 import minimist from "minimist"
 
 const build = async () => {
-	const argv = minimist(process.argv.slice[2] ?? [])
+	const argv = minimist(process.argv.slice(2))
 
 	/**
 	 * @type {esbuild.BuildOptions} 

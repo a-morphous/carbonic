@@ -1,20 +1,33 @@
+# Carbonic Shift
+
 A command line tool to copy the files in a git repository to another one, replacing any proprietary files and folders with open-source alternatives.
 
-# Usage
+## Usage
 
 ```
-splitshift --config path/to/config.json5
+carbonic --config path/to/config.json5
 ```
 
 If a `config` parameter isn't provided, the configuration file is assumed to live at `.shift.json5` in the current directory.
 
-# What does it do?
+## Building from source
+
+Carbonic Shift uses `pnpm` as its package manager:
+
+```
+$ pnpm install
+$ node build
+```
+
+## What does it do?
 
 Copies all the git-tracked files from a source repository to a destination folder (ideally another repository). This can be used to selectively release parts of a repository publicly and squash history. 
 
-As part of the copying process, the tool can also `replace` files that should be kept private. In the future, it should also be able to `rename` files for similar reasons.
+As part of the copying process, the tool can also `replace` files that should be kept private. 
 
-# Writing the configuration file
+> In the future, it should also be able to `rename` files for similar reasons.
+
+## Writing the configuration file
 
 The config file is a `JSON5` file, with the following shape:
 ```

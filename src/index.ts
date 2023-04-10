@@ -4,6 +4,7 @@ import * as fs from "fs"
 import { glob } from "glob"
 import minimist from "minimist"
 import { execSync } from "child_process"
+import { version } from "../package.json"
 
 type Configuration = {
 	source?: string
@@ -31,12 +32,12 @@ const expandReplaceMap = async (sourceRepoActualPath: string, config: Configurat
 }
 
 /**
- * Copies the source file to the destination, with the replace map being used to determine 
+ * Copies the source file to the destination, with the replace map being used to determine
  * if a file should be replaced with another one in the source repo
  * @param sourceFile The file in the source repository to copy. May end up being replaced!
  * @param destinationFile The file in the destination repository. Will always be created unless the replace map says the source maps to null
  * @param expandedReplaceMap A replace map where the globs have already been expanded to full file paths.
- * @returns 
+ * @returns
  */
 const copyFileBasedOnMapping = async (
 	sourceFile: string,
@@ -71,26 +72,10 @@ const copyFileBasedOnMapping = async (
 	copyFile(expandedReplaceMap[path.resolve(sourceFile)] as string)
 }
 
-const splitshift = async () => {
-	// parse the configuration file using JSON5
-	// either it has to be in the working directory, or be supplied as the --config cli variable
-	// if we don't find one, it's an error.
-	const argv = minimist(process.argv.slice[2] ?? [])
-	let configPathActual: string = path.resolve(process.cwd(), ".shift.json5")
-	if (argv.c || argv.config) {
-		const configPathRelative = argv.c ?? argv.config
-		configPathActual = path.resolve(path.resolve(process.cwd(), configPathRelative))
-	}
-	if (!fs.existsSync(configPathActual)) {
-		console.log("Usage: splitshift --config path/to/config.json5\nIf none is provided, config is assumed to live at .shift.json5")
-		process.exit()
-	}
-
-	const config: Configuration = JSON5.parse(fs.readFileSync(configPathActual, "utf-8"))
-
+const carbonic = async (workingPath: string, config: Configuration) => {
 	// get the source repository from the configuration
 	const sourceRepoRelative = config.source ?? "."
-	const sourceRepoActual = path.join(path.dirname(configPathActual), sourceRepoRelative)
+	const sourceRepoActual = path.join(path.dirname(workingPath), sourceRepoRelative)
 
 	const trackedFiles: string[] = []
 	try {
@@ -111,16 +96,45 @@ const splitshift = async () => {
 	for (let trackedFile of trackedFiles) {
 		const sourceFile = path.resolve(sourceRepoActual, trackedFile)
 		if (!fs.existsSync(sourceFile)) {
-			continue;
+			continue
 		}
 
 		const destRepoRelative = config.destination
-		const destRepoActual = path.join(path.dirname(configPathActual), destRepoRelative)
+		const destRepoActual = path.join(path.dirname(workingPath), destRepoRelative)
 
 		const destFile = path.resolve(destRepoActual, trackedFile)
-		
+
 		await copyFileBasedOnMapping(sourceFile, destFile, expandedReplaceMap)
 	}
 }
 
-splitshift()
+const main = async () => {
+	// main operation
+	const argv = minimist(process.argv.slice(2))
+
+	// version
+	if (argv.version || argv.v) {
+		console.log(version)
+		process.exit()
+	}
+
+	// parse the configuration file using JSON5
+	// either it has to be in the working directory, or be supplied as the --config cli variable
+	// if we don't find one, it's an error.
+	let configPathActual: string = path.resolve(process.cwd(), ".shift.json5")
+	if (argv.c || argv.config) {
+		const configPathRelative = argv.c ?? argv.config
+		configPathActual = path.resolve(path.resolve(process.cwd(), configPathRelative))
+	}
+	if (!fs.existsSync(configPathActual) || argv.h || argv.help) {
+		console.log(
+			"Usage: carbonic --config path/to/config.json5\nIf none is provided, config is assumed to live at .shift.json5"
+		)
+		process.exit()
+	}
+	const config: Configuration = JSON5.parse(fs.readFileSync(configPathActual, "utf-8"))
+
+	await carbonic(configPathActual, config)
+}
+
+main()
