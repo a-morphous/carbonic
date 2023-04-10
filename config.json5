@@ -1,0 +1,8 @@
+{
+	source: "./test",
+	destination: "./test_result",
+	filemap: {
+		".shift/": null,
+
+	}
+}
