@@ -82,6 +82,7 @@ const splitshift = async () => {
 		configPathActual = path.resolve(path.resolve(process.cwd(), configPathRelative))
 	}
 	if (!fs.existsSync(configPathActual)) {
+		console.log("Usage: splitshift --config path/to/config.json5\nIf none is provided, config is assumed to live at .shift.json5")
 		process.exit()
 	}
 

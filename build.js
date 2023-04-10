@@ -15,7 +15,10 @@ const build = async () => {
 		platform: "node",
 		minify: true,
 		format: "esm",
-	
+		banner: {
+			js: "#!/usr/bin/env node"
+		}
+		
 	}
 
 	if (argv.w) {
