@@ -1,0 +1,20 @@
+{
+	source: ".",
+	destination: "./test_result",
+	replace: {
+		// handles replacement files
+		// left side = the source file
+		// right side = the file that should *replace* the source file in the destination repo.
+		//  If null, the file is omitted from the destination.
+		".shift/**": null,
+		"test/replaced.md": ".shift/replaced.new.md",
+		"**/*ignored*": null,
+		"README.md": ".shift/README.md",
+	},
+
+	rename: {
+		// left side = source file
+		// right side = what that file is renamed to
+		// this runs _after_ the filemap, so all replacements have already happened
+	}
+}

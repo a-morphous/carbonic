@@ -8,59 +8,67 @@ import { execSync } from "child_process"
 type Configuration = {
 	source?: string
 	destination: string
-	filemap?: Record<string, string | null>
+	replace?: Record<string, string | null>
 }
 
-const expandFilemap = async (sourceRepoActualPath: string, config: Configuration) => {
+const expandReplaceMap = async (sourceRepoActualPath: string, config: Configuration) => {
 	// for each entry in filemap, create an expanded filemap based on the glob that hosts an entry for every
 	// file
-	if (!config.filemap) {
+	if (!config.replace) {
 		return undefined
 	}
-	const expandedFilemap: Record<string, string | null> = {}
-	for (let key of Object.keys(config.filemap)) {
+	const expandedReplaceMap: Record<string, string | null> = {}
+	for (let key of Object.keys(config.replace)) {
 		const files = await glob(path.join(sourceRepoActualPath, key), {
 			withFileTypes: false,
 		})
 		for (let file of files) {
-			expandedFilemap[file] = config.filemap[key]
+			expandedReplaceMap[file] = config.replace[key]
 		}
 	}
 
-	return expandedFilemap
+	return expandedReplaceMap
 }
 
+/**
+ * Copies the source file to the destination, with the replace map being used to determine 
+ * if a file should be replaced with another one in the source repo
+ * @param sourceFile The file in the source repository to copy. May end up being replaced!
+ * @param destinationFile The file in the destination repository. Will always be created unless the replace map says the source maps to null
+ * @param expandedReplaceMap A replace map where the globs have already been expanded to full file paths.
+ * @returns 
+ */
 const copyFileBasedOnMapping = async (
 	sourceFile: string,
 	destinationFile: string,
-	expandedFilemap?: Record<string, string | null>
+	expandedReplaceMap?: Record<string, string | null>
 ) => {
 	const destDir = path.dirname(destinationFile)
-	const copyFile = (newDestFile?: string) => {
-		const actualDestDir = newDestFile ? path.dirname(newDestFile) : destDir
-		if (!fs.existsSync(actualDestDir)) {
-			fs.mkdirSync(actualDestDir, { recursive: true })
+
+	const copyFile = (replacedBy?: string) => {
+		if (!fs.existsSync(destDir)) {
+			fs.mkdirSync(destDir, { recursive: true })
 		}
-		fs.copyFileSync(sourceFile, newDestFile ?? destinationFile)
+		fs.copyFileSync(replacedBy ?? sourceFile, destinationFile)
 	}
-	if (!expandedFilemap) {
+	if (!expandedReplaceMap) {
 		copyFile()
 		return
 	}
 
-	if (expandedFilemap[path.resolve(sourceFile)] === null) {
+	if (expandedReplaceMap[path.resolve(sourceFile)] === null) {
 		// ignored!
 		return
 	}
 
-	if (expandedFilemap[path.resolve(sourceFile)] === undefined) {
+	if (expandedReplaceMap[path.resolve(sourceFile)] === undefined) {
 		// no mapping, so we can safely copy without further caveats
 		copyFile()
 		return
 	}
 
 	// we map a replacement file, so copy that to the destination instead
-	copyFile(expandedFilemap[path.resolve(sourceFile)] as string)
+	copyFile(expandedReplaceMap[path.resolve(sourceFile)] as string)
 }
 
 const splitshift = async () => {
@@ -68,7 +76,7 @@ const splitshift = async () => {
 	// either it has to be in the working directory, or be supplied as the --config cli variable
 	// if we don't find one, it's an error.
 	const argv = minimist(process.argv.slice[2] ?? [])
-	let configPathActual: string = path.resolve(process.cwd(), "config.json5")
+	let configPathActual: string = path.resolve(process.cwd(), ".shift.json5")
 	if (argv.c || argv.config) {
 		const configPathRelative = argv.c ?? argv.config
 		configPathActual = path.resolve(path.resolve(process.cwd(), configPathRelative))
@@ -98,15 +106,19 @@ const splitshift = async () => {
 		process.exit()
 	}
 
-	const expandedFilemap = await expandFilemap(sourceRepoActual, config)
+	const expandedReplaceMap = await expandReplaceMap(sourceRepoActual, config)
 	for (let trackedFile of trackedFiles) {
 		const sourceFile = path.resolve(sourceRepoActual, trackedFile)
+		if (!fs.existsSync(sourceFile)) {
+			continue;
+		}
 
 		const destRepoRelative = config.destination
 		const destRepoActual = path.join(path.dirname(configPathActual), destRepoRelative)
 
 		const destFile = path.resolve(destRepoActual, trackedFile)
-		await copyFileBasedOnMapping(sourceFile, destFile, expandedFilemap)
+		
+		await copyFileBasedOnMapping(sourceFile, destFile, expandedReplaceMap)
 	}
 }
 
