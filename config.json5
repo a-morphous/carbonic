@@ -1,8 +1,11 @@
 {
-	source: "./test",
+	source: ".",
 	destination: "./test_result",
 	filemap: {
-		".shift/": null,
-
-	}
+		// source -> destination
+		".shift/**": null,
+		"test/replaced.md": null,
+		".shift/replaced.new.md": "test/replaced.md",
+		"**/*ignored*": null,
+	},
 }
